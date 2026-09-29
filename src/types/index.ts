@@ -148,11 +148,13 @@ export interface Quote {
 
 export interface NotificationItem {
   id: string;
+  _id: string;
   userId: string;
   title: string;
   body: string;
   read: boolean;
   createdAt: string;
+  type: string;
 }
 
 export interface WalletTxn {

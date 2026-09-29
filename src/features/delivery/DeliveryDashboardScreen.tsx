@@ -16,6 +16,7 @@ import { useAppSelector } from '../../app/store';
 import {
   useDeliveryDashboardQuery,
 } from './deliveryApi';
+import { NotificationsScreen } from '../notifications/NotificationsScreen';
 
 export function DeliveryDashboardScreen() {
   const user = useAppSelector(s => s.auth.user);
@@ -176,6 +177,8 @@ export function DeliveryDashboardScreen() {
           </Text>
         )}
       </Card>
+
+      <NotificationsScreen/>
 
       <Text style={styles.section}>
         Rider checklist

@@ -242,69 +242,59 @@ export function CustomerDashboard () {
   //basic and popular services static image feuture to give a backend
 
   const getServiceIcon = (serviceName: string) => {
-  const name = serviceName.toLowerCase().trim()
+    const name = serviceName.toLowerCase().trim()
 
-  // Washing
-  if (
-    name.includes('wash') ||
-    name.includes('laundry')
-  ) {
+    // Washing
+    if (name.includes('wash') || name.includes('laundry')) {
+      return require('../../assets/washingmachine.png')
+    }
+
+    // Ironing
+    if (
+      name.includes('iron') ||
+      name.includes('ironing') ||
+      name.includes('press')
+    ) {
+      return require('../../assets/iron.png')
+    }
+
+    // Dry Cleaning
+    if (
+      name.includes('dry') ||
+      name.includes('dry clean') ||
+      name.includes('dryclean')
+    ) {
+      return require('../../assets/dryer.png')
+    }
+
+    // Folding
+    if (name.includes('fold') || name.includes('folding')) {
+      return require('../../assets/folding.png')
+    }
+
+    // Premium
+    if (name.includes('premium')) {
+      return require('../../assets/premiumservice.png')
+    }
+
+    // Stain Removal
+    if (
+      name.includes('stainremove') ||
+      name.includes('stain remove') ||
+      name.includes('stain removal') ||
+      name.includes('stain')
+    ) {
+      return require('../../assets/stainremove.png')
+    }
+
+    // Curtain Cleaning
+    if (name.includes('curtain')) {
+      return require('../../assets/curtain.png')
+    }
+
+    // Default
     return require('../../assets/washingmachine.png')
   }
-
-  // Ironing
-  if (
-    name.includes('iron') ||
-    name.includes('ironing') ||
-    name.includes('press')
-  ) {
-    return require('../../assets/iron.png')
-  }
-
-  // Dry Cleaning
-  if (
-    name.includes('dry') ||
-    name.includes('dry clean') ||
-    name.includes('dryclean')
-  ) {
-    return require('../../assets/dryer.png')
-  }
-
-  // Folding
-  if (
-    name.includes('fold') ||
-    name.includes('folding')
-  ) {
-    return require('../../assets/folding.png')
-  }
-
-  // Premium
-  if (
-    name.includes('premium')
-  ) {
-    return require('../../assets/premiumservice.png')
-  }
-
-  // Stain Removal
-  if (
-    name.includes('stainremove') ||
-    name.includes('stain remove') ||
-    name.includes('stain removal') ||
-    name.includes('stain')
-  ) {
-    return require('../../assets/stainremove.png')
-  }
-
-  // Curtain Cleaning
-  if (
-    name.includes('curtain')
-  ) {
-    return require('../../assets/curtain.png')
-  }
-
-  // Default
-  return require('../../assets/washingmachine.png')
-}
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -554,23 +544,6 @@ export function CustomerDashboard () {
             </View>
           </View>
 
-          {/* ================================= */}
-          {/* CREATE ORDER */}
-          {/* ================================= */}
-
-          {/* <View style={styles.createOrderContainer}>
-            <Button
-              title="＋  Create New Order"
-              onPress={() =>
-                navigation.navigate('CreateOrder')
-              }
-            />
-          </View> */}
-
-          {/* ================================= */}
-          {/* QUICK ACTIONS */}
-          {/* ================================= */}
-
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
           </View>
@@ -740,11 +713,11 @@ export function CustomerDashboard () {
 
             <TouchableOpacity
               activeOpacity={0.7}
-             onPress={() =>
-  navigation.navigate('Services', {
-    filter: 'basic',
-  })
-}
+              onPress={() =>
+                navigation.navigate('Services', {
+                  filter: 'basic',
+                })
+              }
               style={styles.seeAllButton}
             >
               <Text style={styles.seeAll}>See all</Text>
@@ -779,11 +752,11 @@ export function CustomerDashboard () {
                 <Card
                   key={service._id || index}
                   style={styles.serviceCard}
-                 onPress={() =>
-  navigation.navigate('CreateOrder', {
-    serviceId: service._id || service._id,
-  })
-}
+                  onPress={() =>
+                    navigation.navigate('CreateOrder', {
+                      serviceId: service._id || service._id,
+                    })
+                  }
                 >
                   {/* TOP */}
 
@@ -838,92 +811,81 @@ export function CustomerDashboard () {
 
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('Services', {
-  filter: 'popular',
-})}
+              onPress={() =>
+                navigation.navigate('Services', {
+                  filter: 'popular',
+                })
+              }
             >
               <Text style={styles.seeAll}>See all</Text>
             </TouchableOpacity>
           </View>
 
-        {popularServices.length === 0 ? (
-  <Card style={styles.emptyCard}>
-    <Image
-      source={require('../../assets/hanger.png')}
-      style={{
-        width: 25,
-        height: 25,
-      }}
-      resizeMode="contain"
-    />
+          {popularServices.length === 0 ? (
+            <Card style={styles.emptyCard}>
+              <Image
+                source={require('../../assets/hanger.png')}
+                style={{
+                  width: 25,
+                  height: 25,
+                }}
+                resizeMode='contain'
+              />
 
-    <Text style={styles.emptyTitle}>
-      No popular services yet
-    </Text>
+              <Text style={styles.emptyTitle}>No popular services yet</Text>
 
-    <Text style={styles.emptyText}>
-      Popular services will appear here.
-    </Text>
-  </Card>
-) : (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.horizontalContent}
-  >
-    {popularServices.map(service => (
-      <Card
-        key={service._id}
-        style={styles.popularCard}
-        onPress={() =>
-          navigation.navigate('CreateOrder', {
-            serviceId: service._id,
-          })
-        }
-      >
-        <View style={styles.popularHeader}>
+              <Text style={styles.emptyText}>
+                Popular services will appear here.
+              </Text>
+            </Card>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalContent}
+            >
+              {popularServices.map(service => (
+                <Card
+                  key={service._id}
+                  style={styles.popularCard}
+                  onPress={() =>
+                    navigation.navigate('CreateOrder', {
+                      serviceId: service._id,
+                    })
+                  }
+                >
+                  <View style={styles.serviceCardTop}>
+                    {/* SERVICE ICON */}
+                    <View style={styles.serviceIcon}>
+                      <Image
+                        source={getServiceIcon(service.name)}
+                        style={{
+                          width: 25,
+                          height: 25,
+                        }}
+                        resizeMode='contain'
+                      />
+                    </View>
 
-          {/* SERVICE ICON */}
-          <View style={styles.serviceIcon}>
-            <Image
-              source={getServiceIcon(service.name)}
-              style={{
-                width: 25,
-                height: 25,
-              }}
-              resizeMode="contain"
-            />
-          </View>
+                    {/* POPULAR BADGE */}
+                    <View style={styles.popularBadge}>
+                      <Text style={styles.popularBadgeText}>POPULAR</Text>
+                    </View>
+                  </View>
 
-          {/* POPULAR BADGE */}
-          <View style={styles.popularBadge}>
-            <Text style={styles.popularBadgeText}>
-              POPULAR
-            </Text>
-          </View>
+                  <Text style={styles.serviceName} numberOfLines={2}>
+                    {service.name}
+                  </Text>
 
-        </View>
-
-        <Text
-          style={styles.serviceName}
-          numberOfLines={2}
-        >
-          {service.name}
-        </Text>
-
-        {service.description ? (
-          <Text
-            style={styles.serviceDescription}
-            numberOfLines={2}
-          >
-            {service.description}
-          </Text>
-        ) : null}
-
-      </Card>
-    ))}
-  </ScrollView>
-)}
+                  {service.description ? (
+                    <Text style={styles.serviceDescription} numberOfLines={2}>
+                      {service.description}
+                    </Text>
+                  ) : null}
+                </Card>
+              ))}
+            </ScrollView>
+          )}
           {/* ================================= */}
           {/* ACTIVE ORDER */}
           {/* ================================= */}
@@ -1467,7 +1429,7 @@ const styles = StyleSheet.create({
   emptyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-
+    
     padding: 16,
     borderRadius: 18,
 
@@ -1621,7 +1583,7 @@ const styles = StyleSheet.create({
     width: 245,
     height: 145,
     borderRadius: radius.md,
-    marginHorizontal:5
+    marginHorizontal: 5,
   },
 
   offerTop: {
@@ -1664,8 +1626,20 @@ const styles = StyleSheet.create({
   // ========================================
 
   popularCard: {
-    width: 210,
-    minHeight: 200,
+    width: 190,
+    minHeight: 225,
+
+    marginRight: 13,
+    padding: 16,
+
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+
+    elevation: 3,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
 
   serviceEmoji: {
@@ -1698,16 +1672,18 @@ const styles = StyleSheet.create({
   },
 
   popularBadge: {
-    backgroundColor: colors.sand,
-    borderRadius: radius.pill,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
+     paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+
+    backgroundColor: '#F3EEFF',
   },
 
   popularBadgeText: {
-    color: colors.tealDark,
     fontSize: 8,
-    fontWeight: '800',
+    fontWeight: '900',
+    letterSpacing: 0.7,
+    color:colors.success
   },
 
   // ========================================

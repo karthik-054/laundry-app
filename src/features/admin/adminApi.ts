@@ -3,7 +3,7 @@ import { ENDPOINT_CONSTANTS } from '../../constants/endpoint';
 
 import type {
   AdminDashboard,
-  DeliveryDashboard,
+  // DeliveryDashboard,
   NotificationItem,
   Order,
   User,
@@ -47,6 +47,29 @@ export interface AssignedBy {
   name: string;
   email?: string;
 }
+
+export type Notification = {
+  _id: string;
+  user: string;
+  title: string;
+  body: string;
+  type: string;
+  orderId?: string | null;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+
+};
+type NotificationsResponse = {
+  success: boolean;
+  count: number;
+  data: Notification[];
+};
+
+type NotificationResponse = {
+  success: boolean;
+  data: Notification;
+};
 
 export interface AdminCustomer {
   id: string;
@@ -289,18 +312,36 @@ export const adminApi =
       // NOTIFICATIONS
       // ========================================
 
-      notifications:
-        build.query<
-          NotificationItem[],
-          void
-        >({
-          query: () =>
-            '/notifications',
+      notifications: build.query<
+        Notification[],
+        void
+      >({
+        query: () => '/notifications',
 
-          providesTags: [
-            'Notifications',
-          ],
+        transformResponse: (
+          response: NotificationsResponse,
+        ) => response.data || [],
+
+        providesTags: ['Notifications'],
+      }),
+
+      
+
+      readNotification: build.mutation<
+        Notification,
+        string
+      >({
+        query: notificationId => ({
+          url: `/notifications/${notificationId}/read`,
+          method: 'PUT',
         }),
+
+        transformResponse: (
+          response: NotificationResponse,
+        ) => response.data,
+
+        invalidatesTags: ['Notifications'],
+      }),
 
       // ========================================
       // ADMIN ORDERS
@@ -316,6 +357,7 @@ export const adminApi =
             url: '/admin/orders',
             method: 'GET',
           }),
+
 
           transformResponse: (
             response: {
@@ -379,6 +421,7 @@ export const adminApi =
           ],
         }),
 
+
       // ========================================
       // CREATE DELIVERY USER
       // POST /api/admin/delivery-users
@@ -426,189 +469,169 @@ export const adminApi =
       // PUT /api/admin/orders/:id/assign
       // ========================================
 
-      assignOrder:
-        build.mutation<
-          AdminOrder,
-          {
-            orderId: string;
+      
 
-            deliveryPersonId:
-            string;
-          }
-        >({
-          query: ({
-            orderId,
-            deliveryPersonId,
-          }) => ({
-            url:
-              `/admin/orders/${orderId}/assign`,
+    // ========================================
+// ASSIGN ORDER
+// PUT /api/admin/orders/:id/assign
+// ========================================
+assignOrder:
+  build.mutation<
+    AdminOrder,
+    {
+      orderId: string;
+      deliveryPersonId: string;
+    }
+  >({
+    query: ({
+      orderId,
+      deliveryPersonId,
+    }) => ({
+      url: `/admin/orders/${orderId}/assign`,
+      method: 'PUT',
+      body: {
+        deliveryPersonId,
+      },
+    }),
 
-            method: 'PUT',
+    transformResponse: (
+      response: {
+        success?: boolean;
+        message?: string;
+        data?: BackendAdminOrder;
+      },
+    ): AdminOrder => {
 
-            body: {
-              deliveryPersonId,
-            },
-          }),
+      const order =
+        response.data;
 
-          transformResponse: (
-            response: {
-              success?: boolean;
+      if (!order) {
+        throw new Error(
+          response.message ||
+            'Order assignment response is empty',
+        );
+      }
 
-              data?: BackendAdminOrder;
-            },
-          ): AdminOrder => {
+      return {
+        id: order.id,
 
-            const order =
-              response.data;
+        orderNumber:
+          order.orderNumber,
 
-            if (!order) {
-              throw new Error(
-                'Order assignment response is empty',
-              );
-            }
+        customer:
+          order.customer
+            ? {
+                id:
+                  order.customer.id,
 
-            return {
-              id: order.id,
+                name:
+                  order.customer.name ??
+                  'Customer',
 
-              orderNumber:
-                order.orderNumber,
+                email:
+                  order.customer.email,
 
-              customer:
-                order.customer
-                  ? {
-                    id:
-                      order.customer.id,
+                phone:
+                  order.customer.phone,
 
-                    name:
-                      order.customer.name ??
-                      'Customer',
+                address:
+                  order.customer.address,
+              }
+            : null,
 
-                    email:
-                      order.customer.email,
+        serviceName:
+          order.serviceName ??
+          'Service',
 
-                    phone:
-                      order.customer.phone,
+        items:
+          order.items ?? [],
 
-                    address:
-                      order.customer.address,
-                  }
-                  : null,
+        finalAmount:
+          order.finalAmount ?? 0,
 
-              serviceName:
-                order.serviceName ??
-                'Service',
+        paymentMethod:
+          order.paymentMethod ??
+          'UNKNOWN',
 
-              items:
-                order.items,
+        paymentStatus:
+          order.paymentStatus ??
+          'PENDING',
 
-              finalAmount:
-                order.finalAmount ?? 0,
+        status:
+          order.status ??
+          'UNKNOWN',
 
-              paymentMethod:
-                order.paymentMethod ??
-                'UNKNOWN',
+        pickupAt:
+          order.pickupAt ?? '',
 
-              paymentStatus:
-                order.paymentStatus ??
-                'PENDING',
+        expectedDeliveryAt:
+          order.expectedDeliveryAt,
 
-              status:
-                order.status ??
-                'UNKNOWN',
+        pickupDeliveryUser:
+          order.pickupDeliveryUser
+            ? {
+                id:
+                  order.pickupDeliveryUser.id,
 
-              pickupAt:
-                order.pickupAt ?? '',
+                name:
+                  order.pickupDeliveryUser.name,
 
-              expectedDeliveryAt:
-                order.expectedDeliveryAt,
+                email:
+                  order.pickupDeliveryUser.email,
 
-              pickupDeliveryUser:
-                order.pickupDeliveryUser
-                  ? {
-                    id:
-                      order
-                        .pickupDeliveryUser
-                        .id,
+                phone:
+                  order.pickupDeliveryUser.phone,
 
-                    name:
-                      order
-                        .pickupDeliveryUser
-                        .name,
+                busy:
+                  order.pickupDeliveryUser.busy,
 
-                    email:
-                      order
-                        .pickupDeliveryUser
-                        .email,
+                isActive:
+                  order.pickupDeliveryUser.isActive,
+              }
+            : null,
 
-                    phone:
-                      order
-                        .pickupDeliveryUser
-                        .phone,
+        dropDeliveryUser:
+          order.dropDeliveryUser
+            ? {
+                id:
+                  order.dropDeliveryUser.id,
 
-                    busy:
-                      order
-                        .pickupDeliveryUser
-                        .busy,
+                name:
+                  order.dropDeliveryUser.name,
 
-                    isActive:
-                      order
-                        .pickupDeliveryUser
-                        .isActive,
-                  }
-                  : null,
+                email:
+                  order.dropDeliveryUser.email,
 
-              dropDeliveryUser:
-                order.dropDeliveryUser
-                  ? {
-                    id:
-                      order
-                        .dropDeliveryUser
-                        .id,
+                phone:
+                  order.dropDeliveryUser.phone,
 
-                    name:
-                      order
-                        .dropDeliveryUser
-                        .name,
+                busy:
+                  order.dropDeliveryUser.busy,
 
-                    email:
-                      order
-                        .dropDeliveryUser
-                        .email,
+                isActive:
+                  order.dropDeliveryUser.isActive,
+              }
+            : null,
 
-                    phone:
-                      order
-                        .dropDeliveryUser
-                        .phone,
+        assignedAt:
+          order.assignedAt,
 
-                    busy:
-                      order
-                        .dropDeliveryUser
-                        .busy,
+        assignedBy:
+          order.assignedBy,
 
-                    isActive:
-                      order
-                        .dropDeliveryUser
-                        .isActive,
-                  }
-                  : null,
+        createdAt:
+          order.createdAt ?? '',
 
-              assignedAt:
-                order.assignedAt,
+        updatedAt:
+          order.updatedAt,
+      };
+    },
 
-              assignedBy:
-                order.assignedBy,
-
-              createdAt:
-                order.createdAt ?? '',
-            };
-          },
-
-          invalidatesTags: [
-            'Orders',
-            'Delivery',
-            'Admin',
-          ],
-        }),
+    invalidatesTags: [
+      'Admin',
+      'Delivery',
+    ],
+  }),
       //admin-review 
       getAdminReviews:
         build.query<AdminReview[], void>({
@@ -623,26 +646,13 @@ export const adminApi =
           providesTags: ['Reviews'],
         }),
 
+
+
+
       // ========================================
       // READ NOTIFICATION
       // ========================================
 
-      readNotification:
-        build.mutation<
-          { ok: boolean },
-          string
-        >({
-          query: id => ({
-            url:
-              `/notifications/${id}/read`,
-
-            method: 'POST',
-          }),
-
-          invalidatesTags: [
-            'Notifications',
-          ],
-        }),
 
       // ========================================
       // UPDATE ORDER STATUS
@@ -758,18 +768,18 @@ export const adminApi =
       // DELIVERY DASHBOARD
       // ========================================
 
-      deliveryDashboard:
-        build.query<
-          DeliveryDashboard,
-          void
-        >({
-          query: () =>
-            '/delivery/dashboard',
+      // deliveryDashboard:
+      //   build.query<
+      //     DeliveryDashboard,
+      //     void
+      //   >({
+      //     query: () =>
+      //       '/delivery/dashboard',
 
-          providesTags: [
-            'Delivery',
-          ],
-        }),
+      //     providesTags: [
+      //       'Delivery',
+      //     ],
+      //   }),
 
       // ========================================
       // DELIVERY PICKUPS
@@ -964,7 +974,7 @@ export const {
   useCreateDeliveryUserMutation,
 
   // Delivery
-  useDeliveryDashboardQuery,
+  // useDeliveryDashboardQuery,
   usePickupsQuery,
   useDeliveriesQuery,
   useDeliveryStatusMutation,
