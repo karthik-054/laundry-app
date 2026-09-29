@@ -26,6 +26,7 @@ import {
   colors,
   spacing,
 } from '../../app/theme';
+import { NotificationsScreen } from '../notifications/NotificationsScreen';
 
 
 
@@ -292,6 +293,7 @@ export function AdminDashboardScreen() {
         }
       >
       </View>
+       <NotificationsScreen/>
 
     </Screen>
   );

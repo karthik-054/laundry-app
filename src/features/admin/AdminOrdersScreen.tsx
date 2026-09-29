@@ -1,3 +1,5 @@
+import React from 'react';
+
 import {
   Alert,
   Pressable,
@@ -33,14 +35,16 @@ import {
   formatWhen,
 } from '../../utils/format';
 
-// ==============================================
+
+// =====================================================
 // COMPONENT
-// ==============================================
+// =====================================================
 
 export function AdminOrdersScreen() {
-  // ============================================
+
+  // ===================================================
   // GET ORDERS
-  // ============================================
+  // ===================================================
 
   const {
     data: orders = [],
@@ -49,18 +53,20 @@ export function AdminOrdersScreen() {
     refetch,
   } = useGetAdminOrdersQuery();
 
-  // ============================================
+
+  // ===================================================
   // GET DELIVERY PERSONS
-  // ============================================
+  // ===================================================
 
   const {
     data: deliveryPersons = [],
     isLoading: deliveryLoading,
   } = useGetDeliveryPersonsQuery();
 
-  // ============================================
+
+  // ===================================================
   // ASSIGN ORDER
-  // ============================================
+  // ===================================================
 
   const [
     assignOrder,
@@ -69,9 +75,10 @@ export function AdminOrdersScreen() {
     },
   ] = useAssignOrderMutation();
 
-  // ============================================
-  // UPDATE ORDER PROCESSING STATUS
-  // ============================================
+
+  // ===================================================
+  // UPDATE ORDER STATUS
+  // ===================================================
 
   const [
     updateAdminOrderStatus,
@@ -80,9 +87,10 @@ export function AdminOrdersScreen() {
     },
   ] = useUpdateAdminOrderStatusMutation();
 
-  // ============================================
+
+  // ===================================================
   // LOADING
-  // ============================================
+  // ===================================================
 
   if (
     ordersLoading ||
@@ -95,9 +103,10 @@ export function AdminOrdersScreen() {
     );
   }
 
-  // ============================================
+
+  // ===================================================
   // ERROR
-  // ============================================
+  // ===================================================
 
   if (ordersError) {
     return (
@@ -110,13 +119,27 @@ export function AdminOrdersScreen() {
     );
   }
 
-  // ============================================
+
+  // ===================================================
   // ASSIGN DELIVERY PERSON
-  // ============================================
+  // ===================================================
 
   function selectDeliveryPerson(
     orderId: string,
   ) {
+
+    if (
+      !orderId
+    ) {
+      Alert.alert(
+        'Assignment failed',
+        'Order ID is missing.',
+      );
+
+      return;
+    }
+
+
     if (
       deliveryPersons.length === 0
     ) {
@@ -128,12 +151,14 @@ export function AdminOrdersScreen() {
       return;
     }
 
+
     Alert.alert(
       'Assign delivery person',
       'Choose a delivery person',
 
       deliveryPersons.map(
         person => ({
+
           text:
             person.busy
               ? `${person.name} (Busy)`
@@ -141,27 +166,159 @@ export function AdminOrdersScreen() {
 
           onPress:
             async () => {
-              try {
-                await assignOrder({
-                  orderId,
 
-                  deliveryPersonId:
-                    person.id,
-                }).unwrap();
+              // =====================================
+              // GET DELIVERY USER ID
+              // =====================================
+
+              const deliveryPersonId = person.id;
+
+
+              // =====================================
+              // DEBUG
+              // =====================================
+
+              console.log(
+                '========== ASSIGN DELIVERY ==========',
+              );
+
+              console.log(
+                'ORDER ID:',
+                orderId,
+              );
+
+              console.log(
+                'DELIVERY PERSON:',
+                person,
+              );
+
+              console.log(
+                'DELIVERY USER ID:',
+                deliveryPersonId,
+              );
+
+
+              // =====================================
+              // VALIDATE DELIVERY USER
+              // =====================================
+
+              if (!deliveryPersonId) {
+
+                console.error(
+                  'DELIVERY USER ID IS MISSING',
+                  person,
+                );
+
+                Alert.alert(
+                  'Assignment failed',
+                  'Delivery person ID is missing.',
+                );
+
+                return;
+              }
+
+
+              // =====================================
+              // FINAL PAYLOAD
+              // =====================================
+
+              const payload = {
+                orderId,
+                deliveryPersonId,
+              };
+
+
+              console.log(
+                '========== ASSIGN PAYLOAD ==========',
+              );
+
+              console.log(
+                JSON.stringify(
+                  payload,
+                  null,
+                  2,
+                ),
+              );
+
+
+              // =====================================
+              // SEND REQUEST
+              // =====================================
+
+              try {
+
+                const result =
+                  await assignOrder(
+                    payload,
+                  ).unwrap();
+
+
+                // ===================================
+                // SUCCESS LOG
+                // ===================================
+
+                console.log(
+                  '========== ASSIGN SUCCESS ==========',
+                );
+
+                console.log(
+                  'ASSIGN RESPONSE:',
+                  result,
+                );
+
+
+                // ===================================
+                // SUCCESS MESSAGE
+                // ===================================
 
                 Alert.alert(
                   'Success',
                   `${person.name} has been assigned to this order.`,
                 );
-              } catch (error) {
+
+
+                // ===================================
+                // REFRESH ORDERS
+                // ===================================
+
+                await refetch();
+
+              } catch (
+                error: any
+              ) {
+
+                // ===================================
+                // ERROR LOG
+                // ===================================
+
+                console.error(
+                  '========== ASSIGN ERROR ==========',
+                );
+
                 console.error(
                   'Assign error:',
                   error,
                 );
 
+                console.error(
+                  'Assign error data:',
+                  error?.data,
+                );
+
+
+                // ===================================
+                // ERROR MESSAGE
+                // ===================================
+
+                const message =
+                  error?.data?.message ||
+                  error?.error ||
+                  'Unable to assign the delivery person.';
+
+
                 Alert.alert(
                   'Assignment failed',
-                  'Unable to assign the delivery person.',
+                  message,
                 );
               }
             },
@@ -170,9 +327,10 @@ export function AdminOrdersScreen() {
     );
   }
 
-  // ============================================
+
+  // ===================================================
   // UPDATE ORDER STATUS
-  // ============================================
+  // ===================================================
 
   async function updateStatus(
     orderId: string,
@@ -180,41 +338,115 @@ export function AdminOrdersScreen() {
       | 'PROCESSING'
       | 'READY_FOR_DELIVERY',
   ) {
+
     try {
-      await updateAdminOrderStatus({
+
+      console.log(
+        '========== UPDATE ORDER STATUS ==========',
+      );
+
+      console.log(
+        'ORDER ID:',
         orderId,
+      );
+
+      console.log(
+        'NEW STATUS:',
         status,
-      }).unwrap();
+      );
+
+
+      // =============================================
+      // SEND STATUS REQUEST
+      // =============================================
+
+      const result =
+        await updateAdminOrderStatus({
+          orderId,
+          status,
+        }).unwrap();
+
+
+      console.log(
+        'STATUS UPDATE SUCCESS:',
+        result,
+      );
+
+
+      // =============================================
+      // SUCCESS MESSAGE
+      // =============================================
 
       Alert.alert(
         'Success',
+
         status === 'PROCESSING'
           ? 'Order has started processing.'
           : 'Order is now ready for delivery.',
       );
-    } catch (error) {
+
+
+      // =============================================
+      // REFRESH ORDERS
+      // =============================================
+
+      await refetch();
+
+    } catch (
+      error: any
+    ) {
+
+      console.error(
+        '========== UPDATE STATUS ERROR ==========',
+      );
+
       console.error(
         'Update order status error:',
         error,
       );
 
+      console.error(
+        'Update status error data:',
+        error?.data,
+      );
+
+
+      const message =
+        error?.data?.message ||
+        error?.error ||
+        'Unable to update the order status.';
+
+
       Alert.alert(
         'Update failed',
-        'Unable to update the order status.',
+        message,
       );
     }
   }
 
-  // ============================================
+
+  // ===================================================
+  // ACTIVE ORDERS
+  // ===================================================
+
+  const activeOrders =
+    orders.filter(
+      order =>
+        order.status !==
+        'DELIVERED',
+    );
+
+
+  // ===================================================
   // UI
-  // ============================================
+  // ===================================================
 
   return (
     <Screen>
 
-      {/* ====================================== */}
+      {/* =========================================== */}
       {/* TITLE */}
-      {/* ====================================== */}
+      {/* =========================================== */}
 
       <Text
         style={
@@ -224,779 +456,643 @@ export function AdminOrdersScreen() {
         Orders Board
       </Text>
 
-      {/* ====================================== */}
-      {/* EMPTY */}
-      {/* ====================================== */}
 
-      {orders.filter(order => order.status !== 'DELIVERED').length === 0 ? (
+      {/* =========================================== */}
+      {/* EMPTY */}
+      {/* =========================================== */}
+
+      {activeOrders.length === 0 ? (
         <EmptyState
           title="No orders"
           body="Customer orders will appear here."
         />
       ) : null}
 
-      {/* ====================================== */}
+
+      {/* =========================================== */}
       {/* ORDERS */}
-      {/* ====================================== */}
+      {/* =========================================== */}
 
-      {orders.filter(order => order.status !== 'DELIVERED').map(
-        order => (
+      {activeOrders.map(
+        order => {
 
-          <Card
-            key={order.id}
-            style={
-              styles.card
-            }
-          >
+         const orderId = order.id;
 
-            {/* ================================= */}
-            {/* ORDER HEADER */}
-            {/* ================================= */}
 
-            <View
+          return (
+
+            <Card
+              key={orderId}
               style={
-                styles.row
+                styles.card
               }
             >
 
-              <Text
-                style={
-                  styles.id
-                }
-              >
-                {
-                  order.orderNumber ??
-                  order.id
-                }
-              </Text>
-
-              <Text
-                style={[
-                  styles.status,
-
-                  order.status ===
-                    'ORDER_CREATED'
-                    ? styles.pending
-                    : order.status ===
-                      'PROCESSING'
-                      ? styles.processing
-                      : order.status ===
-                        'READY_FOR_DELIVERY'
-                        ? styles.ready
-                        : styles.assigned,
-                ]}
-              >
-                {
-                  order.status ??
-                  'UNKNOWN'
-                }
-              </Text>
-
-            </View>
-
-            {/* ================================= */}
-            {/* CUSTOMER */}
-            {/* ================================= */}
-
-            <Text
-              style={
-                styles.customer
-              }
-            >
-              Customer:{' '}
-
-              {
-                order.customer?.name ??
-                'Customer'
-              }
-            </Text>
-
-            {/* ================================= */}
-            {/* PHONE */}
-            {/* ================================= */}
-
-            {order.customer?.phone ? (
-
-              <Text
-                style={
-                  styles.meta
-                }
-              >
-                Phone:{' '}
-
-                {
-                  order.customer.phone
-                }
-              </Text>
-
-            ) : null}
-
-            {/* ================================= */}
-            {/* EMAIL */}
-            {/* ================================= */}
-
-            {order.customer?.email ? (
-
-              <Text
-                style={
-                  styles.meta
-                }
-              >
-                Email:{' '}
-
-                {
-                  order.customer.email
-                }
-              </Text>
-
-            ) : null}
-
-            {/* ================================= */}
-            {/* SERVICE */}
-            {/* ================================= */}
-
-            <Text
-              style={
-                styles.meta
-              }
-            >
-              Service:{' '}
-
-              {
-                order.serviceName ??
-                'Service'
-              }
-            </Text>
-
-            {/* ================================= */}
-            {/* AMOUNT */}
-            {/* ================================= */}
-
-            <Text
-              style={
-                styles.meta
-              }
-            >
-              Amount:{' '}
-
-              {
-                inr(
-                  order.finalAmount ?? 0,
-                )
-              }
-            </Text>
-
-            {/* ================================= */}
-            {/* PAYMENT */}
-            {/* ================================= */}
-
-            <Text
-              style={
-                styles.meta
-              }
-            >
-              Payment:{' '}
-
-              {
-                order.paymentStatus ??
-                'PENDING'
-              }
-            </Text>
-
-            {/* ================================= */}
-            {/* PAYMENT METHOD */}
-            {/* ================================= */}
-
-            {order.paymentMethod ? (
-
-              <Text
-                style={
-                  styles.meta
-                }
-              >
-                Payment Method:{' '}
-
-                {
-                  order.paymentMethod
-                }
-              </Text>
-
-            ) : null}
-
-            {/* ================================= */}
-            {/* PICKUP */}
-            {/* ================================= */}
-
-            <Text
-              style={
-                styles.meta
-              }
-            >
-              Pickup:{' '}
-
-              {
-                order.pickupAt
-                  ? formatWhen(
-                      order.pickupAt,
-                    )
-                  : 'Not scheduled'
-              }
-            </Text>
-
-            {/* ================================= */}
-            {/* EXPECTED DELIVERY */}
-            {/* ================================= */}
-
-            {order.expectedDeliveryAt ? (
-
-              <Text
-                style={
-                  styles.meta
-                }
-              >
-                Expected Delivery:{' '}
-
-                {
-                  formatWhen(
-                    order.expectedDeliveryAt,
-                  )
-                }
-              </Text>
-
-            ) : null}
-
-            {/* ================================= */}
-            {/* PICKUP DELIVERY PERSON */}
-            {/* ================================= */}
-
-            {order.pickupDeliveryUser ? (
+              {/* ================================= */}
+              {/* ORDER HEADER */}
+              {/* ================================= */}
 
               <View
                 style={
-                  styles.assignedBox
+                  styles.row
                 }
               >
 
                 <Text
                   style={
-                    styles.assignedText
+                    styles.id
                   }
                 >
-                  Pickup assigned to:{' '}
-
                   {
-                    order
-                      .pickupDeliveryUser
-                      .name
+                    order.orderNumber ??
+                    orderId
                   }
                 </Text>
 
-                {order
-                  .pickupDeliveryUser
-                  .phone ? (
+
+                <Text
+                  style={[
+                    styles.status,
+
+                    order.status ===
+                      'ORDER_CREATED'
+                      ? styles.pending
+
+                      : order.status ===
+                        'PROCESSING'
+                        ? styles.processing
+
+                        : order.status ===
+                          'READY_FOR_DELIVERY'
+                          ? styles.ready
+
+                          : styles.assigned,
+                  ]}
+                >
+                  {
+                    order.status ??
+                    'UNKNOWN'
+                  }
+                </Text>
+
+              </View>
+
+
+              {/* ================================= */}
+              {/* CUSTOMER */}
+              {/* ================================= */}
+
+              <Text
+                style={
+                  styles.customer
+                }
+              >
+                Customer:{' '}
+
+                {
+                  order.customer?.name ??
+                  'Customer'
+                }
+              </Text>
+
+
+              {/* ================================= */}
+              {/* PHONE */}
+              {/* ================================= */}
+
+              {order.customer?.phone ? (
+
+                <Text
+                  style={
+                    styles.meta
+                  }
+                >
+                  Phone:{' '}
+
+                  {
+                    order.customer.phone
+                  }
+                </Text>
+
+              ) : null}
+
+
+              {/* ================================= */}
+              {/* EMAIL */}
+              {/* ================================= */}
+
+              {order.customer?.email ? (
+
+                <Text
+                  style={
+                    styles.meta
+                  }
+                >
+                  Email:{' '}
+
+                  {
+                    order.customer.email
+                  }
+                </Text>
+
+              ) : null}
+
+
+              {/* ================================= */}
+              {/* SERVICE */}
+              {/* ================================= */}
+
+              <Text
+                style={
+                  styles.meta
+                }
+              >
+                Service:{' '}
+
+                {
+                  order.serviceName ??
+                  'Service'
+                }
+              </Text>
+
+
+              {/* ================================= */}
+              {/* AMOUNT */}
+              {/* ================================= */}
+
+              <Text
+                style={
+                  styles.meta
+                }
+              >
+                Amount:{' '}
+
+                {
+                  inr(
+                    order.finalAmount ??
+                    0,
+                  )
+                }
+              </Text>
+
+
+              {/* ================================= */}
+              {/* PAYMENT */}
+              {/* ================================= */}
+
+              <Text
+                style={
+                  styles.meta
+                }
+              >
+                Payment:{' '}
+
+                {
+                  order.paymentStatus ??
+                  'PENDING'
+                }
+              </Text>
+
+
+              {/* ================================= */}
+              {/* PAYMENT METHOD */}
+              {/* ================================= */}
+
+              {order.paymentMethod ? (
+
+                <Text
+                  style={
+                    styles.meta
+                  }
+                >
+                  Payment Method:{' '}
+
+                  {
+                    order.paymentMethod
+                  }
+                </Text>
+
+              ) : null}
+
+
+              {/* ================================= */}
+              {/* PICKUP */}
+              {/* ================================= */}
+
+              <Text
+                style={
+                  styles.meta
+                }
+              >
+                Pickup:{' '}
+
+                {
+                  order.pickupAt
+                    ? formatWhen(
+                        order.pickupAt,
+                      )
+                    : 'Not scheduled'
+                }
+              </Text>
+
+
+              {/* ================================= */}
+              {/* EXPECTED DELIVERY */}
+              {/* ================================= */}
+
+              {order.expectedDeliveryAt ? (
+
+                <Text
+                  style={
+                    styles.meta
+                  }
+                >
+                  Expected Delivery:{' '}
+
+                  {
+                    formatWhen(
+                      order.expectedDeliveryAt,
+                    )
+                  }
+                </Text>
+
+              ) : null}
+
+
+              {/* ================================= */}
+              {/* PICKUP DELIVERY PERSON */}
+              {/* ================================= */}
+
+              {order.pickupDeliveryUser ? (
+
+                <View
+                  style={
+                    styles.assignedBox
+                  }
+                >
 
                   <Text
                     style={
-                      styles.assignedPhone
+                      styles.assignedText
                     }
                   >
-                    Phone:{' '}
+                    Pickup assigned to:{' '}
 
                     {
                       order
                         .pickupDeliveryUser
-                        .phone
+                        .name
                     }
                   </Text>
 
-                ) : null}
 
-              </View>
+                  {order
+                    .pickupDeliveryUser
+                    .phone ? (
 
-            ) : (
+                    <Text
+                      style={
+                        styles.assignedPhone
+                      }
+                    >
+                      Phone:{' '}
 
-              <Pressable
-                onPress={() =>
-                  selectDeliveryPerson(
-                    order.id,
-                  )
-                }
-                disabled={
-                  assigning
-                }
-                style={[
-                  styles.assignButton,
+                      {
+                        order
+                          .pickupDeliveryUser
+                          .phone
+                      }
+                    </Text>
 
-                  assigning &&
-                    styles.disabledButton,
-                ]}
-              >
+                  ) : null}
 
-                <Text
-                  style={
-                    styles.assignText
+                </View>
+
+              ) : (
+
+                <Pressable
+                  onPress={() =>
+                    selectDeliveryPerson(
+                      orderId,
+                    )
                   }
-                >
-                  {
+
+                  disabled={
                     assigning
-                      ? 'Assigning...'
-                      : 'Assign Delivery Person'
                   }
-                </Text>
 
-              </Pressable>
+                  style={[
+                    styles.assignButton,
 
-            )}
+                    assigning &&
+                      styles.disabledButton,
+                  ]}
+                >
 
-            {/* ================================= */}
-            {/* DROP DELIVERY PERSON */}
-            {/* ================================= */}
+                  <Text
+                    style={
+                      styles.assignText
+                    }
+                  >
+                    {
+                      assigning
+                        ? 'Assigning...'
+                        : 'Assign Delivery Person'
+                    }
+                  </Text>
 
-            {order.dropDeliveryUser ? (
+                </Pressable>
 
-              <View
-                style={
-                  styles.assignedBox
-                }
-              >
+              )}
 
-                <Text
+
+              {/* ================================= */}
+              {/* DROP DELIVERY PERSON */}
+              {/* ================================= */}
+
+              {order.dropDeliveryUser ? (
+
+                <View
                   style={
-                    styles.assignedText
+                    styles.assignedBox
                   }
                 >
-                  Delivery assigned to:{' '}
 
-                  {
-                    order
-                      .dropDeliveryUser
-                      .name
+                  <Text
+                    style={
+                      styles.assignedText
+                    }
+                  >
+                    Delivery assigned to:{' '}
+
+                    {
+                      order
+                        .dropDeliveryUser
+                        .name
+                    }
+                  </Text>
+
+                </View>
+
+              ) : null}
+
+
+              {/* ================================= */}
+              {/* START PROCESSING */}
+              {/* ================================= */}
+
+              {order.status ===
+                'PICKED_UP' && (
+
+                <Pressable
+                  onPress={() =>
+                    updateStatus(
+                      orderId,
+                      'PROCESSING',
+                    )
                   }
-                </Text>
 
-              </View>
-
-            ) : null}
-
-            {/* ================================= */}
-            {/* START PROCESSING */}
-            {/* ================================= */}
-
-            {order.status ===
-              'PICKED_UP' && (
-
-              <Pressable
-                onPress={() =>
-                  updateStatus(
-                    order.id,
-                    'PROCESSING',
-                  )
-                }
-                disabled={
-                  updatingStatus
-                }
-                style={[
-                  styles.processButton,
-
-                  updatingStatus &&
-                    styles.disabledButton,
-                ]}
-              >
-
-                <Text
-                  style={
-                    styles.processText
-                  }
-                >
-                  {
+                  disabled={
                     updatingStatus
-                      ? 'Starting...'
-                      : 'Start Processing'
                   }
-                </Text>
 
-              </Pressable>
+                  style={[
+                    styles.processButton,
 
-            )}
+                    updatingStatus &&
+                      styles.disabledButton,
+                  ]}
+                >
 
-            {/* ================================= */}
-            {/* READY FOR DELIVERY */}
-            {/* ================================= */}
+                  <Text
+                    style={
+                      styles.processText
+                    }
+                  >
+                    {
+                      updatingStatus
+                        ? 'Starting...'
+                        : 'Start Processing'
+                    }
+                  </Text>
 
-            {order.status ===
-              'PROCESSING' && (
+                </Pressable>
+              )}
 
-              <Pressable
-                onPress={() =>
-                  updateStatus(
-                    order.id,
-                    'READY_FOR_DELIVERY',
-                  )
-                }
-                disabled={
-                  updatingStatus
-                }
-                style={[
-                  styles.readyButton,
 
-                  updatingStatus &&
-                    styles.disabledButton,
-                ]}
-              >
+              {/* ================================= */}
+              {/* READY FOR DELIVERY */}
+              {/* ================================= */}
+
+              {order.status ===
+                'PROCESSING' && (
+
+                <Pressable
+                  onPress={() =>
+                    updateStatus(
+                      orderId,
+                      'READY_FOR_DELIVERY',
+                    )
+                  }
+
+                  disabled={
+                    updatingStatus
+                  }
+
+                  style={[
+                    styles.readyButton,
+
+                    updatingStatus &&
+                      styles.disabledButton,
+                  ]}
+                >
+
+                  <Text
+                    style={
+                      styles.readyText
+                    }
+                  >
+                    {
+                      updatingStatus
+                        ? 'Updating...'
+                        : 'Ready for Delivery'
+                    }
+                  </Text>
+
+                </Pressable>
+              )}
+
+
+              {/* ================================= */}
+              {/* CREATED DATE */}
+              {/* ================================= */}
+
+              {order.createdAt ? (
 
                 <Text
                   style={
-                    styles.readyText
+                    styles.created
                   }
                 >
+                  Created:{' '}
+
                   {
-                    updatingStatus
-                      ? 'Updating...'
-                      : 'Ready for Delivery'
+                    formatWhen(
+                      order.createdAt,
+                    )
                   }
                 </Text>
 
-              </Pressable>
+              ) : null}
 
-            )}
-
-            {/* ================================= */}
-            {/* CREATED DATE */}
-            {/* ================================= */}
-
-            {order.createdAt ? (
-
-              <Text
-                style={
-                  styles.created
-                }
-              >
-                Created:{' '}
-
-                {
-                  formatWhen(
-                    order.createdAt,
-                  )
-                }
-              </Text>
-
-            ) : null}
-
-          </Card>
-
-        ),
+            </Card>
+          );
+        },
       )}
 
     </Screen>
   );
 }
 
-// ==============================================
+
+// =====================================================
 // STYLES
-// ==============================================
+// =====================================================
 
 const styles =
   StyleSheet.create({
 
-    // ==========================================
-    // TITLE
-    // ==========================================
-
     title: {
       fontSize: 28,
       fontWeight: '800',
-      color:
-        colors.ink,
-
-      marginBottom:
-        spacing.md,
+      color: colors.ink,
+      marginBottom: spacing.md,
     },
-
-    // ==========================================
-    // CARD
-    // ==========================================
 
     card: {
-      marginBottom:
-        spacing.md,
+      marginBottom: spacing.md,
     },
 
-    // ==========================================
-    // HEADER ROW
-    // ==========================================
-
     row: {
-      flexDirection:
-        'row',
-
-      justifyContent:
-        'space-between',
-
-      alignItems:
-        'center',
-
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 8,
     },
 
-    // ==========================================
-    // ORDER ID
-    // ==========================================
-
     id: {
-      fontWeight:
-        '800',
-
-      color:
-        colors.ink,
-
+      fontWeight: '800',
+      color: colors.ink,
       fontSize: 16,
-
       flex: 1,
-
-      marginRight:
-        spacing.sm,
+      marginRight: spacing.sm,
     },
 
-    // ==========================================
-    // CUSTOMER
-    // ==========================================
-
     customer: {
-      color:
-        colors.ink,
-
-      fontWeight:
-        '700',
-
+      color: colors.ink,
+      fontWeight: '700',
       marginTop: 6,
     },
 
-    // ==========================================
-    // META
-    // ==========================================
-
     meta: {
-      color:
-        colors.muted,
-
+      color: colors.muted,
       marginTop: 5,
     },
 
-    // ==========================================
-    // CREATED
-    // ==========================================
-
     created: {
-      color:
-        colors.muted,
-
+      color: colors.muted,
       fontSize: 12,
-
-      marginTop:
-        spacing.sm,
+      marginTop: spacing.sm,
     },
-
-    // ==========================================
-    // STATUS
-    // ==========================================
 
     status: {
-      paddingHorizontal:
-        10,
-
-      paddingVertical:
-        5,
-
-      borderRadius:
-        radius.md,
-
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: radius.md,
       fontSize: 12,
-
-      fontWeight:
-        '700',
+      fontWeight: '700',
     },
-
-    // ==========================================
-    // PENDING
-    // ==========================================
 
     pending: {
-      backgroundColor:
-        '#FFF3CD',
-
-      color:
-        '#856404',
+      backgroundColor: '#FFF3CD',
+      color: '#856404',
     },
-
-    // ==========================================
-    // ASSIGNED
-    // ==========================================
 
     assigned: {
-      backgroundColor:
-        '#E7F4F3',
-
-      color:
-        colors.teal,
+      backgroundColor: '#E7F4F3',
+      color: colors.teal,
     },
-
-    // ==========================================
-    // PROCESSING
-    // ==========================================
 
     processing: {
-      backgroundColor:
-        '#E8E0FF',
-
-      color:
-        '#7138F2',
+      backgroundColor: '#E8E0FF',
+      color: '#7138F2',
     },
-
-    // ==========================================
-    // READY
-    // ==========================================
 
     ready: {
-      backgroundColor:
-        '#DFF6E8',
-
-      color:
-        '#168A5B',
+      backgroundColor: '#DFF6E8',
+      color: '#168A5B',
     },
-
-    // ==========================================
-    // ASSIGN BUTTON
-    // ==========================================
 
     assignButton: {
-      marginTop:
-        spacing.md,
-
-      padding:
-        spacing.md,
-
-      backgroundColor:
-        colors.teal,
-
-      borderRadius:
-        radius.md,
-
-      alignItems:
-        'center',
+      marginTop: spacing.md,
+      padding: spacing.md,
+      backgroundColor: colors.teal,
+      borderRadius: radius.md,
+      alignItems: 'center',
     },
 
-    // ==========================================
-    // START PROCESSING BUTTON
-    // ==========================================
+    assignText: {
+      color: '#FFFFFF',
+      fontWeight: '800',
+    },
 
     processButton: {
-      marginTop:
-        spacing.md,
-
+      marginTop: spacing.md,
       paddingVertical: 13,
-
-      borderRadius:
-        radius.md,
-
-      backgroundColor:
-        '#7138F2',
-
-      alignItems:
-        'center',
+      borderRadius: radius.md,
+      backgroundColor: '#7138F2',
+      alignItems: 'center',
     },
 
     processText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-
+      color: '#FFFFFF',
+      fontWeight: '800',
       fontSize: 15,
     },
 
-    // ==========================================
-    // READY FOR DELIVERY BUTTON
-    // ==========================================
-
     readyButton: {
-      marginTop:
-        spacing.md,
-
+      marginTop: spacing.md,
       paddingVertical: 13,
-
-      borderRadius:
-        radius.md,
-
-      backgroundColor:
-        '#168A5B',
-
-      alignItems:
-        'center',
+      borderRadius: radius.md,
+      backgroundColor: '#168A5B',
+      alignItems: 'center',
     },
 
     readyText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-
+      color: '#FFFFFF',
+      fontWeight: '800',
       fontSize: 15,
     },
-
-    // ==========================================
-    // DISABLED
-    // ==========================================
 
     disabledButton: {
       opacity: 0.6,
     },
 
-    // ==========================================
-    // ASSIGN TEXT
-    // ==========================================
-
-    assignText: {
-      color:
-        '#FFFFFF',
-
-      fontWeight:
-        '800',
-    },
-
-    // ==========================================
-    // ASSIGNED BOX
-    // ==========================================
-
     assignedBox: {
-      marginTop:
-        spacing.md,
-
-      padding:
-        spacing.sm,
-
-      borderRadius:
-        radius.md,
-
-      backgroundColor:
-        '#E7F4F3',
+      marginTop: spacing.md,
+      padding: spacing.sm,
+      borderRadius: radius.md,
+      backgroundColor: '#E7F4F3',
     },
 
     assignedText: {
-      color:
-        colors.teal,
-
-      fontWeight:
-        '700',
+      color: colors.teal,
+      fontWeight: '700',
     },
 
     assignedPhone: {
-      color:
-        colors.muted,
-
+      color: colors.muted,
       marginTop: 4,
-
       fontSize: 13,
     },
 
